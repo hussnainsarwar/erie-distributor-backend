@@ -12,8 +12,8 @@ app.listen(3000, ()=>{
 
 const mongoose=require('./database/mongoose.js');
 
-const User = require('./database/models/User');
-const Category = require('./database/models/Category'); // Assuming you have a Category model
+const User = require('./database/models/User.js');
+const Category = require('./database/models/Category.js'); // Assuming you have a Category model
 const bcrypt = require('bcrypt');
 
 // POST endpoint to handle user signup
