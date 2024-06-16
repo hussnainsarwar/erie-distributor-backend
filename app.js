@@ -6,10 +6,15 @@ app.use(cors());
 
 const nodemailer = require('nodemailer');
 
-app.listen(3000, ()=>{
-    console.log("server started at port 3000");
-});
+// app.listen(3000, ()=>{
+//     console.log("server started at port 3000");
+// });
 
+const PORT = process.env.PORT || 3000;
+
+app.listen(PORT, () => {
+    console.log(`Server started at port ${PORT}`);
+});
 const mongoose=require('./database/mongoose.js');
 
 const User = require('./database/models/User.js');
