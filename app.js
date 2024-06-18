@@ -98,7 +98,7 @@ app.post('/addCategory', async (req, res) => {
 
 
 app.get('/categories', async (req, res) => {
-  try {
+  try { 
     const categories = await Category.find();
     res.status(200).json(categories);
   } catch (error) {
