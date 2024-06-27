@@ -98,7 +98,7 @@ app.get('/categories', async (req, res) => {
 }); 
  
 
-app.get('/', async (req, res) => {
+app.get('/',  (req, res) => {
     res.send({message : "server working"});
 
 }); 
@@ -110,3 +110,5 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
     console.log(`Server started at port ${PORT}`);
 });
+
+module.exports = app;
