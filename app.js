@@ -1,21 +1,12 @@
 const express= require('express');//look for express in node module and load it
 const app=express();
+const mongoose=require('./database/mongoose.js');
 app.use(express.json());
 const cors = require('cors'); // Import CORS middleware
 app.use(cors());
 
-const nodemailer = require('nodemailer');
 
-// app.listen(3000, ()=>{
-//     console.log("server started at port 3000");
-// });
 
-const PORT = process.env.PORT || 3000;
-
-app.listen(PORT, () => {
-    console.log(`Server started at port ${PORT}`);
-});
-const mongoose=require('./database/mongoose.js');
 
 const User = require('./database/models/User.js');
 const Category = require('./database/models/Category.js'); // Assuming you have a Category model
@@ -106,3 +97,16 @@ app.get('/categories', async (req, res) => {
   }
 }); 
  
+
+app.get('/', async (req, res) => {
+    res.send({message : "server working"});
+
+}); 
+
+
+
+const PORT = process.env.PORT || 3000;
+
+app.listen(PORT, () => {
+    console.log(`Server started at port ${PORT}`);
+});
