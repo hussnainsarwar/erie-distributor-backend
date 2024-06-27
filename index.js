@@ -109,7 +109,7 @@ app.get('/', async (req, res) => {
 }); 
 
 app.get('/',  (req, res) => {
-  res.send({message : "server working"});
+  res.send("server working");
 
 }); 
 
