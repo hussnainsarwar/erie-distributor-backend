@@ -12,6 +12,7 @@ const nodemailer = require('nodemailer');
 
 
 const mongoose=require('./database/mongoose.js');
+const SubCategory=require('./database/models/SubCategory.js');
 
 const User = require('./database/models/User.js');
 const Category = require('./database/models/Category.js'); // Assuming you have a Category model
@@ -102,6 +103,22 @@ app.get('/categories', async (req, res) => {
   }
 }); 
  
+app.post('/addSubCategory', async (req, res) => {
+  try {
+    const { name, path, price, flavors, categoryId } = req.body;
+    const subCategory = new SubCategory({
+      name,
+      path,
+      price,
+      flavors,
+      categoryId,
+    });
+    await subCategory.save();
+    res.status(201).json(subCategory);
+  } catch (error) {
+    res.status(500).json({ message: 'Failed to add subcategory', error });
+  }
+});
 
 app.get('/', async (req, res) => {
     res.send({message : "server working"});
