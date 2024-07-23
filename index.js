@@ -122,6 +122,29 @@ app.post('/addSubCategory', async (req, res) => {
   }
 });
 
+
+app.get('/subcategories/:categoryId', async (req, res) => {
+  try {
+    const categoryId = req.params.categoryId.trim(); // Trim whitespace and newlines
+
+    // Convert categoryId to ObjectId using 'new'
+    const objectId = new mongoose.Types.ObjectId(categoryId);
+
+    // Fetch subcategories based on categoryId
+    const subcategories = await SubCategory.find({ categoryId: objectId });
+
+    if (subcategories.length === 0) {
+      return res.status(404).json({ message: 'No subcategories found for this categoryId' });
+    }
+
+    res.status(200).json(subcategories);
+  } catch (error) {
+    console.error('Error fetching subcategories:', error); // Log the error details to the console
+    res.status(500).json({ message: 'Failed to fetch subcategories', error: error.message });
+  }
+});
+
+
 app.get('/', async (req, res) => {
     res.send({message : "server working"});
 
