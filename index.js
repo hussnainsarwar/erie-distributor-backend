@@ -105,7 +105,7 @@ app.get('/categories', async (req, res) => {
  
 app.post('/addSubCategory', async (req, res) => {
   try {
-    const { name, path, price, flavors, categoryId } = req.body;
+    const { name, path, price, flavors, categoryId, isFavourite, brand } = req.body;
     const subCategory = new SubCategory({
       name,
       path,
