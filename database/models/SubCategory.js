@@ -22,6 +22,14 @@ const SubCategorySchema = new mongoose.Schema({
     ref: 'Category',
     required: true,
   },
+  isFavourite: {
+    type: Boolean,
+    default: false,
+  },
+  brand: {
+    type: String,
+    default: null,
+  },
 });
 
 const SubCategory = mongoose.model('SubCategory', SubCategorySchema);

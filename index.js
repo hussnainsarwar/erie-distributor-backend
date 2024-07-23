@@ -112,6 +112,8 @@ app.post('/addSubCategory', async (req, res) => {
       price,
       flavors,
       categoryId,
+      isFavourite: isFavourite !== undefined ? isFavourite : false,
+      brand: brand || null,
     });
     await subCategory.save();
     res.status(201).json(subCategory);
