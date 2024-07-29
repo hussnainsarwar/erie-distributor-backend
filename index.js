@@ -45,7 +45,7 @@ app.post('/login', async (req, res) => {
           return res.status(404).send('User not found');
       }
       
-      console.log(user,'user')
+      // console.log(user,'user')
       const isPasswordValid = await bcrypt.compare(password, user.password); // Compare passwords
       if (!isPasswordValid) {
         console.log('password npt comparing')
@@ -114,7 +114,7 @@ app.get('/allsubcategories', async (req, res) => {
  
 app.post('/addSubCategory', async (req, res) => {
   try {
-    const { name, path, price, flavors, categoryId, isFavourite, brand } = req.body;
+    const { name, path, price, flavors, categoryId, isFavourite, brand ,quantity } = req.body;
     const subCategory = new SubCategory({
       name,
       path,
@@ -123,6 +123,7 @@ app.post('/addSubCategory', async (req, res) => {
       categoryId,
       isFavourite: isFavourite !== undefined ? isFavourite : false,
       brand: brand || null,
+      quantity: quantity !== undefined ? quantity : 1,
     });
     await subCategory.save();
     res.status(201).json(subCategory);
