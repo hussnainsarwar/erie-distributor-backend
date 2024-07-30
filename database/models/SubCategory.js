@@ -35,6 +35,10 @@ const SubCategorySchema = new mongoose.Schema({
     required: true,
     default: 1,
   },
+  description:{
+    type: String,
+    default: 'No Description added',
+  }
 });
 
 const SubCategory = mongoose.model('SubCategory', SubCategorySchema);

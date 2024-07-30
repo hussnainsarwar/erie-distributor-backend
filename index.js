@@ -114,7 +114,7 @@ app.get('/allsubcategories', async (req, res) => {
  
 app.post('/addSubCategory', async (req, res) => {
   try {
-    const { name, path, price, flavors, categoryId, isFavourite, brand ,quantity } = req.body;
+    const { name, path, price, flavors, categoryId, isFavourite, brand ,quantity,description } = req.body;
     const subCategory = new SubCategory({
       name,
       path,
@@ -123,7 +123,8 @@ app.post('/addSubCategory', async (req, res) => {
       categoryId,
       isFavourite: isFavourite !== undefined ? isFavourite : false,
       brand: brand || null,
-      quantity: quantity !== undefined ? quantity : 1,
+      quantity,
+      description,
     });
     await subCategory.save();
     res.status(201).json(subCategory);
