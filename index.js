@@ -155,6 +155,17 @@ app.get('/subcategories/:categoryId', async (req, res) => {
   }
 });
 
+app.get('/category/:id/name', async (req, res) => {
+  try {
+    const category = await Category.findById(req.params.id).select('name');
+    if (!category) {
+      return res.status(404).send({ message: 'Category not found' });
+    }
+    res.send({ name: category.name });
+  } catch (error) {
+    res.status(500).send({ message: 'Server error' });
+  }
+});
 
 app.get('/', async (req, res) => {
     res.send({message : "server working"});
