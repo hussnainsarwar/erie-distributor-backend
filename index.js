@@ -15,7 +15,9 @@ const mongoose=require('./database/mongoose.js');
 const SubCategory=require('./database/models/SubCategory.js');
 
 const User = require('./database/models/User.js');
-const Category = require('./database/models/Category.js'); // Assuming you have a Category model
+const Category = require('./database/models/Category.js');
+const Favourite = require('./database/models/Favourites.js');
+
 const bcrypt = require('bcrypt');
 
 // POST endpoint to handle user signup
@@ -164,6 +166,39 @@ app.get('/category/:id/name', async (req, res) => {
     res.send({ name: category.name });
   } catch (error) {
     res.status(500).send({ message: 'Server error' });
+  }
+});
+
+
+app.get('/favorites/:userId', async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const favorites = await Favourite.find({ userId });
+   res.status(200).json(favorites);
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error });
+  }
+});
+
+
+app.post('/favorites/toggle', async (req, res) => {
+  try {
+    const { userId, subcategoryId } = req.body;
+
+    let favorite = await Favourite.findOne({ userId, subcategoryId });
+
+    if (favorite) {
+      // If favorite exists, remove it
+      await Favourite.deleteOne({ userId, subcategoryId });
+      res.status(200).json({ message: 'Removed from favorites' });
+    } else {
+      // If favorite does not exist, add it
+      favorite = new Favourite({ userId, subcategoryId });
+      await favorite.save();
+      res.status(200).json({ message: 'Added to favorites' });
+    }
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error });
   }
 });
 
