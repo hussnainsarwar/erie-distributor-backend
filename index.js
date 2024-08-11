@@ -157,6 +157,18 @@ app.get('/subcategories/:categoryId', async (req, res) => {
   }
 });
 
+app.post('/subcategories/batch', async (req, res) => {
+  const { ids } = req.body; // Expecting an array of IDs
+
+  try {
+    const subcategories = await SubCategory.find({ _id: { $in: ids } });
+    res.status(200).json(subcategories);
+  } catch (error) {
+    console.log(error)
+    res.status(500).json({ message: 'Server error', error });
+  }
+});
+
 app.get('/category/:id/name', async (req, res) => {
   try {
     const category = await Category.findById(req.params.id).select('name');
