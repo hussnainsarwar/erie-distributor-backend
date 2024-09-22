@@ -224,7 +224,7 @@ app.get('/users', async (req, res) => {
   }
 });
 app.get('/user/:userId/subcategories', async (req, res) => {
-  try {
+  try { 
     const { userId } = req.params;
     const subcategories = await SubCategory.find(); // Fetch all subcategories
 
@@ -254,8 +254,8 @@ app.get('/user/:userId/subcategories', async (req, res) => {
 app.post('/user/:userId/subcategory/:subcategoryId/updatePrice', async (req, res) => {
   try {
     const { userId, subcategoryId } = req.params;
-    const { updatedPrice } = req.body;
-
+    // const { updatedPrice } = req.body;
+    const updatedPrice = String(req.body.updatedPrice); 
     await UserPrice.findOneAndUpdate(
       { userId, subcategoryId },
       { updatedPrice },
