@@ -17,6 +17,7 @@ const SubCategory=require('./database/models/SubCategory.js');
 const User = require('./database/models/User.js');
 const Category = require('./database/models/Category.js');
 const Favourite = require('./database/models/Favourites.js');
+const UserPrice = require('./database/models/UserPrice');
 
 const bcrypt = require('bcrypt');
 
@@ -213,6 +214,61 @@ app.post('/favorites/toggle', async (req, res) => {
     res.status(500).json({ message: 'Server error', error });
   }
 });
+
+app.get('/users', async (req, res) => {
+  try {
+    const users = await User.find(); // Assuming you have a User model
+    res.status(200).json(users);
+  } catch (error) {
+    res.status(500).json({ message: 'Failed to fetch users', error });
+  }
+});
+app.get('/user/:userId/subcategories', async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const subcategories = await SubCategory.find(); // Fetch all subcategories
+
+    const subcategoriesWithPrices = await Promise.all(
+      subcategories.map(async (subcategory) => {
+        const userPrice = await UserPrice.findOne({ userId, subcategoryId: subcategory._id });
+        
+        if (userPrice) {
+          // If user has updated the price, replace the price field with the updated price
+          return {
+            ...subcategory.toObject(),
+            price: userPrice.updatedPrice, // Replace the price field
+          };
+        } else {
+          // If no updated price, return the subcategory as is (with its default price field)
+          return subcategory.toObject();
+        }
+      })
+    );
+    res.status(200).json(subcategoriesWithPrices);
+  } catch (error) {
+    res.status(500).json({ message: 'Failed to fetch subcategories', error });
+  }
+});
+
+
+app.post('/user/:userId/subcategory/:subcategoryId/updatePrice', async (req, res) => {
+  try {
+    const { userId, subcategoryId } = req.params;
+    const { updatedPrice } = req.body;
+
+    await UserPrice.findOneAndUpdate(
+      { userId, subcategoryId },
+      { updatedPrice },
+      { upsert: true, new: true }
+    );
+
+    res.status(200).json({ message: 'Price updated successfully' });
+  } catch (error) {
+    res.status(500).json({ message: 'Failed to update price', error });
+  }
+});
+
+
 
 app.get('/', async (req, res) => {
     res.send({message : "server working"});
