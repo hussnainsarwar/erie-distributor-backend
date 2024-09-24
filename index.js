@@ -18,7 +18,7 @@ const User = require('./database/models/User.js');
 const Category = require('./database/models/Category.js');
 const Favourite = require('./database/models/Favourites.js');
 const UserPrice = require('./database/models/UserPrice');
-
+const Cart = require('./database/models/cart.js');
 const bcrypt = require('bcrypt');
 
 // POST endpoint to handle user signup
@@ -157,8 +157,45 @@ app.get('/subcategories/:categoryId', async (req, res) => {
     res.status(500).json({ message: 'Failed to fetch subcategories', error: error.message });
   }
 });
+app.get('/subcategories/:categoryId/:userId', async (req, res) => {
+  const { userId, categoryId } = req.params;
+
+  try {
+    // Fetch all subcategories based on categoryId
+    const subcategories = await SubCategory.find({ categoryId });
+
+    if (userId) {
+      // Fetch updated prices for the user
+      const userPrices = await UserPrice.find({ userId });
+
+      // Create a map for quick lookup of user prices by subcategoryId
+      const userPriceMap = userPrices.reduce((map, price) => {
+        map[price.subcategoryId] = price.updatedPrice;
+        return map;
+      }, {});
+
+      // Merge the updated prices with subcategories
+      const updatedSubcategories = subcategories.map((subcategory) => {
+        return {
+          ...subcategory._doc, // Use ._doc to get the raw subcategory data
+          price: userPriceMap[subcategory._id.toString()] || subcategory.price, // Override price if updatedPrice exists
+        };
+      });
+
+      return res.json(updatedSubcategories);
+    } else {
+      // If no user is logged in, return the default subcategories
+      return res.json(subcategories);
+    }
+  } catch (error) {
+    console.error('Error fetching subcategories:', error); // Log the error details to the console
+    res.status(500).json({ message: 'Failed to fetch subcategories', error: error.message });
+  }
+});
+
 
 app.post('/subcategories/batch', async (req, res) => {
+  
   const { ids } = req.body; // Expecting an array of IDs
 
   try {
@@ -169,6 +206,42 @@ app.post('/subcategories/batch', async (req, res) => {
     res.status(500).json({ message: 'Server error', error });
   }
 });
+// API to fetch subcategories with user-specific prices
+app.post('/subcategories/user', async (req, res) => {
+  const { ids, userId } = req.body; // Expecting subcategory IDs and userId
+  if (!userId) {
+    return res.status(400).json({ message: 'User ID is required' });
+  }
+
+  try {
+    // Fetch subcategories based on the provided IDs
+    const subcategories = await SubCategory.find({ _id: { $in: ids } });
+
+    // Fetch user-specific prices for the subcategories
+    const userPrices = await UserPrice.find({ userId, subcategoryId: { $in: ids } });
+
+    // Create a map for quick lookup of user prices by subcategoryId
+    const userPriceMap = userPrices.reduce((map, price) => {
+      map[price.subcategoryId] = price.updatedPrice;
+      return map;
+    }, {});
+
+    // Merge user prices with subcategories
+    const updatedSubcategories = subcategories.map((subcategory) => {
+      return {
+        ...subcategory._doc, // Use ._doc to get the raw subcategory data
+        price: userPriceMap[subcategory._id.toString()] || subcategory.price, // Override price if user-specific price exists
+      };
+    });
+
+    return res.status(200).json(updatedSubcategories);
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ message: 'Server error', error });
+  }
+});
+
+
 
 app.get('/category/:id/name', async (req, res) => {
   try {
@@ -268,6 +341,142 @@ app.post('/user/:userId/subcategory/:subcategoryId/updatePrice', async (req, res
   }
 });
 
+
+
+
+// cart
+app.post('/cart/add', async (req, res) => {
+  const { userId, subcategoryId } = req.body;
+
+  if (!userId || !subcategoryId) {
+    return res.status(400).json({ error: 'userId and subcategoryId are required' });
+  }
+
+  try {
+    const existingItem = await Cart.findOne({ userId, subcategoryId });
+
+    if (existingItem) {
+      // If the item is already in the cart, update the quantity
+      existingItem.quantity += 1;
+      await existingItem.save();
+      return res.status(200).json({ message: 'Item quantity updated', cartItem: existingItem });
+    }
+
+    const cartItem = new Cart({ userId, subcategoryId });
+    await cartItem.save();
+
+    res.status(201).json({ message: 'Item added to cart successfully', cartItem });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to add item to cart' });
+  }
+});
+
+app.post('/cart/update-quantity', async (req, res) => {
+  const { userId, subcategoryId, quantity } = req.body;
+
+  console.log(userId,'userId',subcategoryId,'subcategoryId',quantity,'quantity')
+
+  if (!userId || !subcategoryId || quantity == null) {
+    return res.status(400).json({ error: 'userId, subcategoryId, and quantity are required' });
+  }
+
+  try {
+    const cartItem = await Cart.findOne({ userId, subcategoryId });
+
+    if (!cartItem) {
+      return res.status(404).json({ error: 'Item not found in cart' });
+    }
+
+    cartItem.quantity = quantity;
+    await cartItem.save();
+
+    res.status(200).json({ message: 'Quantity updated successfully', cartItem });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to update quantity' });
+  }
+});
+
+// Get all Cart items for a user
+// app.get('/cart/:userId', async (req, res) => {
+//   const { userId } = req.params;
+//   try {
+//     const cartItems = await Cart.find({ userId });
+//     console.log(cartItems,'items cart')
+//     res.status(200).json(cartItems);
+//   } catch (error) {
+//     res.status(500).json({ error: 'Failed to fetch cart items' });
+//   }
+// });
+app.get('/cart/:userId', async (req, res) => {
+  const { userId } = req.params;
+
+  try {
+    // Fetch all cart items for the user
+    const cartItems = await Cart.find({ userId });
+    
+    // Get all subcategory IDs in the cart
+    const subcategoryIds = cartItems.map(item => item.subcategoryId);
+    
+    // Fetch all subcategories in the cart
+    const subcategories = await SubCategory.find({ _id: { $in: subcategoryIds } });
+    
+    // Fetch user-specific prices for subcategories
+    const userPrices = await UserPrice.find({ userId, subcategoryId: { $in: subcategoryIds } });
+    
+    // Merge updated prices into cart items
+    const updatedCartItems = cartItems.map((cartItem) => {
+      // Find the corresponding subcategory
+      const subcategory = subcategories.find(sub => sub._id.toString() === cartItem.subcategoryId);
+
+      // Find the updated price for the subcategory (if it exists)
+      const userPrice = userPrices.find(price => price.subcategoryId === cartItem.subcategoryId);
+
+      // Use the updated price if available, otherwise use the default subcategory price
+      const price = userPrice ? userPrice.updatedPrice : subcategory.price;
+
+      return {
+        ...cartItem._doc, // Use ._doc to get the raw cart item data
+        price, // Add the price field with updated or default price
+        subcategoryName: subcategory.name, // Optionally add subcategory details
+      };
+    });
+    // Return the updated cart items
+    res.status(200).json(updatedCartItems);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Failed to fetch cart items' });
+  }
+});
+
+
+app.delete('/cart/remove', async (req, res) => {
+  const { userId, subcategoryId } = req.body;
+
+  if (!userId || !subcategoryId) {
+    return res.status(400).json({ error: 'userId and subcategoryId are required' });
+  }
+
+  try {
+    const cartItem = await Cart.findOne({ userId, subcategoryId });
+
+    if (!cartItem) {
+      return res.status(404).json({ error: 'Item not found in cart' });
+    }
+
+    if (cartItem.quantity > 1) {
+      // Decrease quantity
+      cartItem.quantity -= 1;
+      await cartItem.save();
+    } else {
+      // Remove item if quantity is 1
+      await Cart.deleteOne({ userId, subcategoryId });
+    }
+
+    res.status(200).json({ message: 'Item removed from cart successfully' });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to remove item from cart' });
+  }
+});
 
 
 app.get('/', async (req, res) => {
