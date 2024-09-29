@@ -207,6 +207,51 @@ app.post('/send-receipt', async (req, res) => {
 });
 
 
+app.post('/check-user', async (req, res) => {
+  const { email } = req.body;
+
+  try {
+    // Check if the user exists
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+      return res.status(200).json({ message: 'User exists', userId: existingUser._id,usertype:existingUser.usertype });
+    } else {
+      return res.status(404).json({ message: 'User does not exist' });
+    }
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ message: 'Server error' });
+  }
+});
+
+app.post('/registerGoogleUser', async (req, res) => {
+  const { name, email, contact,password,usertype } = req.body;
+
+  try {
+    // Check if the user already exists
+    let existingUser = await User.findOne({ email });
+    if (existingUser) {
+      return res.status(400).json({ message: 'User already exists' });
+    }
+
+    // Create a new user
+    const newUser = new User({
+      name,
+      email,
+      contact,
+      password: password || 'GoogleUserPassword', 
+      usertype: usertype,
+    });
+
+    await newUser.save();
+    return res.status(201).json({ message: 'User registered successfully', userId: newUser._id });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ message: 'Server error' });
+  }
+}); 
+
+
 // POST endpoint to handle user signup
 app.post('/signup', async (req, res) => {
   try {
