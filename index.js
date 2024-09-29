@@ -28,7 +28,7 @@ const transporter = nodemailer.createTransport({
     user: 'eriedistributor@gmail.com', // Your Gmail account
     pass: 'tsmj pyby ijvr cfrx', // Your Gmail app password (not your normal password)
   },
-});
+}); 
 
 function sendReceiptEmail(toEmail, cartItems, totalValue) {
   const htmlContent = formatHtmlReceipt(cartItems, totalValue);

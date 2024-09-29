@@ -23,6 +23,10 @@ const orderSchema = new mongoose.Schema({
     type: Date,
     default: Date.now,
   },
+  fulfilled: {
+    type: Boolean,
+    default: false, // Default value set to false
+  },
 });
 
 const Order = mongoose.model('Order', orderSchema);
