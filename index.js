@@ -676,6 +676,39 @@ app.delete('/cart/empty', async (req, res) => {
 
 
 
+// for order
+app.get('/orders', async (req, res) => {
+  try {
+    const orders = await Order.find().sort({ createdAt: -1 });
+    res.status(200).json(orders); // Return orders in JSON format
+  } catch (error) {
+    res.status(500).json({ message: 'Error fetching orders', error: error.message });
+  }
+});
+
+// API to update fulfillment status of an order
+app.put('/orders/:id', async (req, res) => {
+  const { id } = req.params;
+  const { fulfilled } = req.body;
+
+  try {
+    const order = await Order.findById(id); // Find the order by ID
+    if (!order) {
+      return res.status(404).json({ message: 'Order not found' });
+    }
+
+    // Update the fulfillment status
+    order.fulfilled = fulfilled;
+    await order.save(); // Save the updated order
+
+    res.status(200).json({ message: 'Order updated successfully', order });
+  } catch (error) {
+    res.status(500).json({ message: 'Error updating order', error: error.message });
+  }
+});
+
+
+
 app.get('/', async (req, res) => {
     res.send({message : "server working"});
 
