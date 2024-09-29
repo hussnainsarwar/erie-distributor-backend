@@ -18,10 +18,195 @@ const User = require('./database/models/User.js');
 const Category = require('./database/models/Category.js');
 const Favourite = require('./database/models/Favourites.js');
 const UserPrice = require('./database/models/UserPrice');
+const Order = require('./database/models/Order');
 const Cart = require('./database/models/cart.js');
 const bcrypt = require('bcrypt');
 
-// POST endpoint to handle user signup
+const transporter = nodemailer.createTransport({
+  service: 'gmail', // You can use any email service like Yahoo, Outlook, etc.
+  auth: {
+    user: 'eriedistributor@gmail.com', // Your Gmail account
+    pass: 'tsmj pyby ijvr cfrx', // Your Gmail app password (not your normal password)
+  },
+});
+
+function sendReceiptEmail(toEmail, cartItems, totalValue) {
+  const htmlContent = formatHtmlReceipt(cartItems, totalValue);
+
+  const mailOptions = {
+    from: 'eriedistributor@gmail.com',
+    to: toEmail,
+    subject: 'Payment Receipt',
+    html: htmlContent, // Use HTML for styled email
+  };
+
+  transporter.sendMail(mailOptions, (error, info) => {
+    if (error) {
+      return console.error('Error sending email:', error);
+    }
+    console.log('Email sent successfully:', info.response);
+  });
+}
+
+// Helper function to format HTML receipt content
+function formatHtmlReceipt(cartItems, totalValue) {
+  let receiptItems = cartItems
+    .map(item => `
+      <tr>
+        <td style="padding: 10px; text-align: center;">
+          <img src="${item.path}" alt="${item.name}" style="max-width: 50px; max-height: 50px;">
+        </td>
+        <td style="padding: 10px; text-align: left;">${item.name} (x${item.quantity})</td>
+        <td style="padding: 10px; text-align: right;">\$${(item.price * item.quantity).toFixed(2)}</td>
+      </tr>
+    `)
+    .join('');
+
+  return `
+    <html>
+      <body style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #ddd;">
+        <div style="text-align: center; padding-bottom: 20px;">
+          <img src="https://firebasestorage.googleapis.com/v0/b/eriedistributor-28efa.appspot.com/o/erie_distributor_logo_splash.png?alt=media&token=b34f41c4-7320-437c-96a1-5a5e91e42cec" alt="Company Logo" style="max-width: 150px;">
+        </div>
+        <h2 style="text-align: center;">Thank you for your purchase!</h2>
+        <p style="text-align: center;">Here is your payment receipt Please remit payment at your earliest convenience.Thank you for your purchase - we appreciate it very much:</p>
+        <table style="width: 100%; border-collapse: collapse; margin-top: 20px;">
+          <thead>
+            <tr>
+              <th style="border-bottom: 1px solid #ddd; padding: 8px; text-align: left;">Image</th>
+              <th style="border-bottom: 1px solid #ddd; padding: 8px; text-align: left;">Product</th>
+              <th style="border-bottom: 1px solid #ddd; padding: 8px; text-align: right;">Price</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${receiptItems}
+          </tbody>
+        </table>
+        <p style="text-align: right; font-weight: bold; margin-top: 20px;">
+          Total: \$${totalValue.toFixed(2)}
+        </p>
+        <footer style="text-align: center; margin-top: 20px;">
+          <p style="font-size: 12px;">Erie Distributor - All rights reserved</p>
+          <p style="font-size: 12px;">141 E 26th ST Erie PA 16504</p>
+          <p style="font-size: 12px;">Jahangir Cheema PH# 412-995-0913</p>
+          <p style="font-size: 12px;">Junaid Bajwa PH# 330-843-6348</p>
+
+        </footer>
+      </body>
+    </html>
+  `;
+}
+
+
+function sendReceiptEmailAdmin(toEmail, cartItems, totalValue,userEmail) {
+  const htmlContent = formatHtmlReceiptAdmin(cartItems, totalValue,userEmail);
+
+  const mailOptions = {
+    from: 'eriedistributor@gmail.com',
+    to: toEmail,
+    subject: 'New Order',
+    html: htmlContent, // Use HTML for styled email
+  };
+
+  transporter.sendMail(mailOptions, (error, info) => {
+    if (error) {
+      return console.error('Error sending email:', error);
+    }
+    console.log('Email sent successfully:', info.response);
+  });
+}
+
+// Helper function to format HTML receipt content
+function formatHtmlReceiptAdmin(cartItems, totalValue,userEmail) {
+  let receiptItems = cartItems
+    .map(item => `
+      <tr>
+        <td style="padding: 10px; text-align: center;">
+          <img src="${item.path}" alt="${item.name}" style="max-width: 50px; max-height: 50px;">
+        </td>
+        <td style="padding: 10px; text-align: left;">${item.name} (x${item.quantity})</td>
+        <td style="padding: 10px; text-align: right;">\$${(item.price * item.quantity).toFixed(2)}</td>
+      </tr>
+    `)
+    .join('');
+
+  return `
+    <html>
+      <body style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #ddd;">
+        <div style="text-align: center; padding-bottom: 20px;">
+          <img src="https://firebasestorage.googleapis.com/v0/b/eriedistributor-28efa.appspot.com/o/erie_distributor_logo_splash.png?alt=media&token=b34f41c4-7320-437c-96a1-5a5e91e42cec" alt="Company Logo" style="max-width: 150px;">
+        </div>
+        <h2 style="text-align: center;">New Order!</h2>
+        <p style="text-align: center;">Here is your Order from ${userEmail}:</p>
+        <table style="width: 100%; border-collapse: collapse; margin-top: 20px;">
+          <thead>
+            <tr>
+              <th style="border-bottom: 1px solid #ddd; padding: 8px; text-align: left;">Image</th>
+              <th style="border-bottom: 1px solid #ddd; padding: 8px; text-align: left;">Product</th>
+              <th style="border-bottom: 1px solid #ddd; padding: 8px; text-align: right;">Price</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${receiptItems}
+          </tbody>
+        </table>
+        <p style="text-align: right; font-weight: bold; margin-top: 20px;">
+          Total: \$${totalValue.toFixed(2)}
+        </p>
+        <footer style="text-align: center; margin-top: 20px;">
+          <p style="font-size: 12px;">Erie Distributor - All rights reserved</p>
+          <p style="font-size: 12px;">141 E 26th ST Erie PA 16504</p>
+
+        </footer>
+      </body>
+    </html>
+  `;
+}
+
+
+// API endpoint to send a receipt email
+app.post('/send-receipt', async (req, res) => {
+  const { userId, cartItems, totalValue } = req.body;
+  try {
+  const user = await User.findOne({ _id: userId });
+
+  if (!user) {
+    return res.status(404).send( {message:'User not found'});
+  }
+
+  const userEmail = user.email;
+  // Assume that the email is fetched using userId from the database
+  // const userEmail = userId; // Replace this with the actual user email logic
+  const newOrder = new Order({
+    userId: user._id,
+    email: userEmail, // Store the user's email
+    cartItems: cartItems,
+    totalValue: totalValue,
+  });
+
+  await newOrder.save(); 
+  // Call function to send an email
+  sendReceiptEmail(userEmail, cartItems, totalValue);
+
+  const adminEmail = 'eriedistributor@gmail.com'; // Replace with your admin email
+  sendReceiptEmailAdmin(adminEmail, cartItems, totalValue,userEmail);
+
+  res.status(200).send({
+    message: 'Receipt email sent successfully',
+    email: userEmail, // Include the user's email in the response
+  });
+
+} catch (error) {
+  console.error('Error sending receipt email:', error); // Log the error
+  res.status(500).send({
+    message: 'An error occurred while sending the receipt email', // Handle any errors
+    error: error.message, // Include error message in response for debugging
+  });
+}
+
+});
+
+
 // POST endpoint to handle user signup
 app.post('/signup', async (req, res) => {
   try {
@@ -477,6 +662,18 @@ app.delete('/cart/remove', async (req, res) => {
     res.status(500).json({ error: 'Failed to remove item from cart' });
   }
 });
+
+
+app.delete('/cart/empty', async (req, res) => {
+  const { userId } = req.body;
+  try {
+    await Cart.deleteMany({ userId }); // Assuming CartModel is your cart schema
+    res.status(200).send('Cart emptied successfully');
+  } catch (error) {
+    res.status(500).send('Error emptying cart');
+  }
+});
+
 
 
 app.get('/', async (req, res) => {
