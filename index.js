@@ -604,6 +604,58 @@ app.post('/user/:userId/subcategory/:subcategoryId/updatePrice', async (req, res
 
 
 
+app.post('/update-profile', async (req, res) => {
+  const { userId, name } = req.body;
+
+  try {
+    // Find the user by ID
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Update user name
+    user.name = name || user.name; // Update name if provided
+    await user.save(); // Save the updated user
+
+    res.status(200).json({ message: 'Profile updated successfully', user });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// POST endpoint to update user password without checking the old password
+app.post('/update-password', async (req, res) => {
+  const { userId, newPassword, confirmPassword } = req.body;
+
+  try {
+    // Find the user by ID
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Check if the new password and confirm password match
+    if (newPassword !== confirmPassword) {
+      return res.status(400).json({ message: 'New password and confirm password do not match' });
+    }
+
+    // Hash the new password and update it
+    const hashedNewPassword = await bcrypt.hash(newPassword, 10);
+    user.password = hashedNewPassword;
+    await user.save(); // Save the updated user
+
+    res.status(200).json({ message: 'Password updated successfully' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+
+
+
 
 // cart
 app.post('/cart/add', async (req, res) => {
