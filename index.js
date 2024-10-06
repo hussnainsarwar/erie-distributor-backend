@@ -207,6 +207,37 @@ app.post('/send-receipt', async (req, res) => {
 });
 
 
+
+// Add a new POST endpoint to handle contact form submissions
+app.post('/contact-us', (req, res) => {
+  const { name, email, phone, message } = req.body;
+
+  // Email content
+  const mailOptions = {
+    from: 'eriedistributor@gmail.com', // Your Gmail account
+    to: 'eriedistributor@gmail.com', // Where the contact form details will be sent
+    subject: 'New Contact Us Message',
+    html: `
+      <h3>New Contact Us Message</h3>
+      <p><strong>Name:</strong> ${name}</p>
+      <p><strong>Email:</strong> ${email}</p>
+      <p><strong>Phone:</strong> ${phone}</p>
+      <p><strong>Message:</strong> ${message}</p>
+    `,
+  };
+
+  transporter.sendMail(mailOptions, (error, info) => {
+    if (error) {
+      console.error('Error sending contact email:', error);
+      return res.status(500).send({ message: 'Failed to send email' });
+    }
+    console.log('Contact email sent:', info.response);
+    res.status(200).send({ message: 'Contact message sent successfully' });
+  });
+});
+
+
+
 app.post('/check-user', async (req, res) => {
   const { email } = req.body;
 
